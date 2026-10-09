@@ -1,0 +1,78 @@
+<script>
+/* Signovate Art — self-managed Products (Decap CMS).
+   Loads products.json and renders a Products section + nav link.
+   If products.json is missing or empty, nothing is shown. */
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  fetch('products.json', {cache:'no-store'}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(data){
+    var items = (data && data.items) || [];
+    if(!items.length) return;
+    if(document.getElementById('products')) return;
+    var portfolio = document.getElementById('portfolio');
+    if(!portfolio) return;
+    var nav = document.querySelector('.nav-links');
+    if(nav && !nav.querySelector('[data-nav-products]')){
+      var a = document.createElement('a');
+      a.href = '#products'; a.textContent = 'Products'; a.setAttribute('data-nav-products','1');
+      var contact = nav.querySelector('a[href="#contact"]');
+      if(contact) nav.insertBefore(a, contact); else nav.appendChild(a);
+    }
+    var sec = document.createElement('section');
+    sec.className = 'section'; sec.id = 'products';
+    var cards = items.map(function(p){
+      var img = esc(p.image||''), title = esc(p.title||'Product'),
+          desc = esc(p.description||''), cat = esc(p.category||''),
+          price = esc(p.price||'');
+      return '<figure class="gallery-card" role="button" tabindex="0" data-image="'+img+'" data-title="'+title+'" data-desc="'+desc+'" data-price="'+price+'">'
+        + '<img src="'+img+'" alt="'+title+'" loading="lazy">'
+        + '<figcaption class="gallery-label">'+title
+        + (cat ? '<span style="display:block;font-weight:400;font-size:.75rem;opacity:.8">'+cat+'</span>' : '')
+        + (price ? '<span style="display:block;font-weight:700;font-size:.85rem;color:var(--red,#ed1c24);margin-top:2px">'+price+'</span>' : '')
+        + '</figcaption></figure>';
+    }).join('');
+    sec.innerHTML = '<div class="shell"><div class="section-head"><p class="eyebrow">Our Products</p>'
+      + '<h2>Products</h2>'
+      + '<p class="lead">Signovate Art ke products.</p></div>'
+      + '<div class="gallery">'+cards+'</div></div>';
+    portfolio.parentNode.insertBefore(sec, portfolio.nextSibling);
+    function openLB(src, title, desc, price){
+      if(!src) return;
+      var ov = document.createElement('div');
+      ov.setAttribute('role','dialog'); ov.setAttribute('aria-label', title);
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(5,7,10,.93);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;cursor:zoom-out;';
+      var im = document.createElement('img');
+      im.src = src; im.alt = title;
+      im.style.cssText = 'max-width:92vw;max-height:78vh;border-radius:12px;object-fit:contain;';
+      var cap = document.createElement('div');
+      cap.style.cssText = 'color:#fff;font:700 1.05rem Manrope,sans-serif;text-align:center;';
+      cap.textContent = title;
+      ov.appendChild(im); ov.appendChild(cap);
+      if(price){
+        var pr = document.createElement('div');
+        pr.style.cssText = 'color:#ed1c24;font:700 1.1rem Manrope,sans-serif;text-align:center;';
+        pr.textContent = price;
+        ov.appendChild(pr);
+      }
+      if(desc){
+        var d = document.createElement('div');
+        d.style.cssText = 'color:#cbd2dc;font:400 .9rem Manrope,sans-serif;text-align:center;max-width:640px;';
+        d.textContent = desc;
+        ov.appendChild(d);
+      }
+      ov.addEventListener('click', function(){ ov.remove(); });
+      document.addEventListener('keydown', function esc2(ev){ if(ev.key==='Escape'){ ov.remove(); document.removeEventListener('keydown', esc2); } });
+      document.body.appendChild(ov);
+    }
+    function activate(card){ openLB(card.getAttribute('data-image'), card.getAttribute('data-title'), card.getAttribute('data-desc'), card.getAttribute('data-price')); }
+    sec.addEventListener('click', function(e){
+      var card = e.target.closest ? e.target.closest('.gallery-card') : null;
+      if(card) activate(card);
+    });
+    sec.addEventListener('keydown', function(e){
+      if(e.key !== 'Enter' && e.key !== ' ') return;
+      var card = e.target.closest ? e.target.closest('.gallery-card') : null;
+      if(card){ e.preventDefault(); activate(card); }
+    });
+  }).catch(function(){ /* products.json missing — section stays hidden */ });
+})();
+</script>
